@@ -5,8 +5,8 @@ using Twist = RosMessageTypes.Geometry.Twist;
 public class HuskyROS : MonoBehaviour
 {
     public string topicName = "cmd_vel";
-    public float wheelRadius = 0.1651f;
-    public float wheelSeparation = 0.512f;
+    public float wheelRadius = 0.165f;
+    public float wheelSeparation = 0.555f;
     const float MAX_LIN_VEL = 0.2f;
     const float MAX_ANG_VEL = 1.5f;
 
