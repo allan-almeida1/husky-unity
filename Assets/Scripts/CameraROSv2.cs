@@ -12,9 +12,10 @@ public class CameraROSv2 : MonoBehaviour
     private Camera cam;
     private Texture2D image;
     private Texture2D result;
-    public int smallTextureWidth = 320;
-    public int smallTextureHeight = 176;
+    public int smallTextureWidth = 480;
+    public int smallTextureHeight = 264;
     public RawImage rawImage;
+    public RawImage rawImage2;
     // Start is called before the first frame update
     void Start()
     {
@@ -24,6 +25,7 @@ public class CameraROSv2 : MonoBehaviour
         result = new Texture2D(smallTextureWidth, smallTextureHeight);
         ros = ROSConnection.GetOrCreateInstance();
         ros.RegisterPublisher<ImageMsg>("/camera/image");
+        ros.Subscribe<ImageMsg>("/image/path", ImageCallback);
     }
 
     // Update is called once per frame
@@ -55,5 +57,11 @@ public class CameraROSv2 : MonoBehaviour
         RenderTexture.active = null;
         RenderTexture.ReleaseTemporary(rt);
         return result;
+    }
+
+    private void ImageCallback(ImageMsg msg)
+    {
+        Texture2D receivedImage = msg.ToTexture2D();
+        rawImage2.texture = receivedImage;
     }
 }
