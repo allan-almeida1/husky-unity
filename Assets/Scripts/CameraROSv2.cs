@@ -19,6 +19,7 @@ public class CameraROSv2 : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        Application.targetFrameRate = 60;
         cam = GetComponent<Camera>();
         rt = new RenderTexture(960, 528, 24);
         image = new Texture2D(rt.width, rt.height);
