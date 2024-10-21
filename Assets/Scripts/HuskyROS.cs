@@ -1,6 +1,8 @@
 using UnityEngine;
 using Unity.Robotics.ROSTCPConnector;
 using Twist = RosMessageTypes.Geometry.Twist;
+using RosMessageTypes.Sensor;
+using RosMessageTypes.Std;
 
 public class HuskyROS : MonoBehaviour
 {
@@ -15,11 +17,19 @@ public class HuskyROS : MonoBehaviour
     private ArticulationBody[] rightWheels;
     private ArticulationBody[] leftWheels;
 
+    private JointStateMsg jointStateMsg;
+
     private float rightVelocity = 0.0f;
     private float leftVelocity = 0.0f;
+    private PIDController leftPID;
+    private PIDController rightPID;
     void Start()
     {
         ROSConnection.GetOrCreateInstance().Subscribe<Twist>(topicName, VelCallback);
+        ROSConnection.GetOrCreateInstance().RegisterPublisher<JointStateMsg>("/unity/husky/joint_states");
+        jointStateMsg = new JointStateMsg();
+        jointStateMsg.name = new string[] {"left_side_wheels_joint", "right_side_wheels_joint"};
+
         leftWheels = new ArticulationBody[2];
         rightWheels = new ArticulationBody[2];
 
@@ -28,12 +38,37 @@ public class HuskyROS : MonoBehaviour
         leftWheels[0] = huskyRobot.transform.Find("world/base_link/front_left_wheel").GetComponent<ArticulationBody>();
         leftWheels[1] = huskyRobot.transform.Find("world/base_link/rear_left_wheel").GetComponent<ArticulationBody>();
 
+        rightPID = new PIDController(0.5f, 0.2f, 0.001f);
+        leftPID = new PIDController(0.5f, 0.2f, 0.001f);
+
         ChangeDrivesTypeToVelocity();
     }
 
     void FixedUpdate()
     {
-        SetJointVelocities(rightVelocity, leftVelocity);
+        float deltaTime = Time.fixedDeltaTime;
+
+        // Get the current joint velocities
+        float rightJointVel = rightWheels[0].jointVelocity[0];
+        float leftJointVel = leftWheels[0].jointVelocity[0];
+
+        // Print to console
+        Debug.Log("Right velocity SP: " + rightVelocity + " Left velocity SP: " + leftVelocity);
+        Debug.Log("Right joint velocity: " + rightJointVel + " Left joint velocity: " + leftJointVel);
+
+        // Publish current joint states
+        jointStateMsg.velocity = new double[] {leftJointVel, rightJointVel};
+        ROSConnection.GetOrCreateInstance().Publish("/unity/husky/joint_states", jointStateMsg);
+
+        // Calculate the PID output
+        float rightPIDOutput = rightPID.Calculate(rightVelocity, rightJointVel, deltaTime);
+        float leftPIDOutput = leftPID.Calculate(leftVelocity, leftJointVel, deltaTime);
+
+        // Set the joint velocities
+        SetJointVelocities(rightPIDOutput + rightVelocity, leftPIDOutput + leftVelocity);
+
+        // SetJointVelocities(rightPIDOutput, leftPIDOutput);
+        // SetJointVelocities(rightVelocity, leftVelocity);
     }
 
     private void VelCallback(Twist velMsg)
@@ -43,6 +78,9 @@ public class HuskyROS : MonoBehaviour
 
         rightVelocity = (linVel / wheelRadius) + (angVel * wheelSeparation / (2 * wheelRadius));
         leftVelocity = (linVel / wheelRadius) - (angVel * wheelSeparation / (2 * wheelRadius));
+
+        // output to console
+        Debug.Log("Right velocity SP: " + rightVelocity + " Left velocity SP: " + leftVelocity);
     }
 
     private void ChangeDrivesTypeToVelocity()

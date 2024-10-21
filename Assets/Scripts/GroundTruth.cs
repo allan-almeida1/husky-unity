@@ -1,5 +1,6 @@
 using RosMessageTypes.Geometry;
 using Unity.Robotics.ROSTCPConnector;
+using Unity.Robotics.ROSTCPConnector.ROSGeometry;
 using UnityEngine;
 
 public class GroundTruth : MonoBehaviour
@@ -29,7 +30,9 @@ public class GroundTruth : MonoBehaviour
     {
         // Get current position and rotation
         Vector3 currentPosition = GameObject.Find("husky_origin").transform.position;
+        Vector3<FLU> currentROSPosition = currentPosition.To<FLU>();
         Quaternion currentRotation = GameObject.Find("husky_origin").transform.rotation;
+        Quaternion<FLU> currentROSRotation = currentRotation.To<FLU>();
 
         // Calculate position and rotation deltas
         Vector3 positionDelta = currentPosition - lastPosition;
@@ -51,15 +54,17 @@ public class GroundTruth : MonoBehaviour
         rotationDelta.ToAngleAxis(out angle, out axis);
 
         // Normalize axis and calculate angular velocity
-        Vector3 localAngularVelocity = (axis * angle * Mathf.Deg2Rad) / deltaTime;
+        Vector3 localAngularVelocity = axis * angle * Mathf.Deg2Rad / deltaTime;
 
         // Update the last position and rotation
         lastPosition = currentPosition;
         lastRotation = currentRotation;
 
         // Publish the pose and twist messages
-        pose.position = new PointMsg(currentPosition.x, currentPosition.y, currentPosition.z);
-        pose.orientation = new QuaternionMsg(currentRotation.x, currentRotation.y, currentRotation.z, currentRotation.w);
+        // pose.position = new PointMsg(currentPosition.x, currentPosition.y, currentPosition.z);
+        // pose.orientation = new QuaternionMsg(currentRotation.x, currentRotation.y, currentRotation.z, currentRotation.w);
+        pose.position = new PointMsg(currentROSPosition.x, currentROSPosition.y, currentROSPosition.z);
+        pose.orientation = new QuaternionMsg(currentROSRotation.x, currentROSRotation.y, currentROSRotation.z, currentROSRotation.w);
         ros.Publish("/unity/husky/pose", pose);
 
         twist.linear = new Vector3Msg(linearVelocity.z, linearVelocity.y, linearVelocity.x);
