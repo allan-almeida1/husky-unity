@@ -8,7 +8,7 @@ using Unity.Robotics.ROSTCPConnector.MessageGeneration;
 namespace RosMessageTypes.Geometry
 {
     [Serializable]
-    public class Twist : Message
+    public class TwistMsg : Message
     {
         public const string k_RosMessageName = "geometry_msgs/Twist";
         public override string RosMessageName => k_RosMessageName;
@@ -17,21 +17,21 @@ namespace RosMessageTypes.Geometry
         public Vector3Msg linear;
         public Vector3Msg angular;
 
-        public Twist()
+        public TwistMsg()
         {
             this.linear = new Vector3Msg();
             this.angular = new Vector3Msg();
         }
 
-        public Twist(Vector3Msg linear, Vector3Msg angular)
+        public TwistMsg(Vector3Msg linear, Vector3Msg angular)
         {
             this.linear = linear;
             this.angular = angular;
         }
 
-        public static Twist Deserialize(MessageDeserializer deserializer) => new Twist(deserializer);
+        public static TwistMsg Deserialize(MessageDeserializer deserializer) => new TwistMsg(deserializer);
 
-        private Twist(MessageDeserializer deserializer)
+        private TwistMsg(MessageDeserializer deserializer)
         {
             this.linear = Vector3Msg.Deserialize(deserializer);
             this.angular = Vector3Msg.Deserialize(deserializer);

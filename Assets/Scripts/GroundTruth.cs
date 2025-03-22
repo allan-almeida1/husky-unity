@@ -7,7 +7,6 @@ public class GroundTruth : MonoBehaviour
 {
     private ROSConnection ros;
     private PoseMsg pose;
-    private TwistMsg twist;
 
     private Vector3 lastPosition;
     private Quaternion lastRotation;
@@ -19,7 +18,7 @@ public class GroundTruth : MonoBehaviour
         ros.RegisterPublisher<TwistMsg>("/unity/husky/twist");
 
         pose = new PoseMsg();
-        twist = new TwistMsg();
+        // twist = new TwistMsg();
 
         // Initialize last position and rotation
         lastPosition = transform.position;
@@ -37,13 +36,19 @@ public class GroundTruth : MonoBehaviour
         // Calculate position and rotation deltas
         Vector3 positionDelta = currentPosition - lastPosition;
         Quaternion rotationDelta = currentRotation * Quaternion.Inverse(lastRotation);
+        //Debug.Log("PositionDelta 0: " +  Mathf.Abs(positionDelta[0]) + "PositionDelta 1: " + positionDelta[1] + "PositionDelta 2: " + positionDelta[2]);
 
+    
         // Calculate linear velocity (change in position over time)
         float deltaTime = Time.fixedDeltaTime; // Time between fixed updates
 
         // Convert position delta to local frame
         Vector3 localPositionDelta = transform.InverseTransformDirection(positionDelta);
 
+        localPositionDelta[0]=Mathf.Abs(localPositionDelta[0]);
+        localPositionDelta[1]=Mathf.Abs(localPositionDelta[1]);
+        localPositionDelta[2]=Mathf.Abs(localPositionDelta[2]);
+        
         // Calculate linear velocity in local frame
         Vector3 linearVelocity = localPositionDelta / deltaTime;        
 
@@ -67,8 +72,8 @@ public class GroundTruth : MonoBehaviour
         pose.orientation = new QuaternionMsg(currentROSRotation.x, currentROSRotation.y, currentROSRotation.z, currentROSRotation.w);
         ros.Publish("/unity/husky/pose", pose);
 
-        twist.linear = new Vector3Msg(linearVelocity.z, linearVelocity.y, linearVelocity.x);
-        twist.angular = new Vector3Msg(localAngularVelocity.x, localAngularVelocity.z, -localAngularVelocity.y);
-        ros.Publish("/unity/husky/twist", twist);
+        Vector3Msg linear = new Vector3Msg(linearVelocity.z, linearVelocity.y, linearVelocity.x);
+        Vector3Msg angular = new Vector3Msg(localAngularVelocity.x, localAngularVelocity.z, -localAngularVelocity.y);
+        ros.Publish("/unity/husky/twist", new TwistMsg(linear, angular));
     }
 }
